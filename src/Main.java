@@ -1,13 +1,92 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-void main() {
-  //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-  // to see how IntelliJ IDEA suggests fixing it.
-  IO.println(String.format("Hello and welcome!"));
+package com.mygdx.game;
 
-  for (int i = 1; i <= 5; i++) {
-    //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-    // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-    IO.println("i = " + i);
-  }
+import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.ScreenUtils;
+
+public class MyGdxGame extends ApplicationAdapter {
+    ShapeRenderer shape;
+    Rectangle player;
+    Rectangle powerUpPrize;
+
+    float velocityY = 0;
+    boolean isLiquidState = false;
+    boolean prizeActive = true;
+
+    @Override
+    public void create () {
+        shape = new ShapeRenderer();
+        // Standard Animal State: Tall and narrow hitbox
+        player = new Rectangle(50, 50, 40, 80);
+        powerUpPrize = new Rectangle(500, 50, 30, 30);
+    }
+
+    @Override
+    public void render () {
+        // Clear screen with a light blue background
+        ScreenUtils.clear(0.5f, 0.8f, 1f, 1);
+
+        // --- 1. GAMEPLAY: MOVEMENT & PHYSICS ---
+        // Determine speed based on the current OOP state
+        float speed = isLiquidState ? 150f : 300f;
+
+        if (Gdx.input.isKeyPressed(Keys.A)) player.x -= speed * Gdx.graphics.getDeltaTime();
+        if (Gdx.input.isKeyPressed(Keys.D)) player.x += speed * Gdx.graphics.getDeltaTime();
+
+        // Basic Jumping Logic
+        if (Gdx.input.isKeyJustPressed(Keys.SPACE) && player.y <= 50) {
+            velocityY = 450f; // Jump force
+        }
+
+        // Basic Gravity
+        player.y += velocityY * Gdx.graphics.getDeltaTime();
+        if (player.y > 50) {
+            velocityY -= 1200f * Gdx.graphics.getDeltaTime(); // Gravity pulling down
+        } else {
+            player.y = 50; // Lock to floor level
+            velocityY = 0;
+        }
+
+        // --- 2. CORE LOGIC: THE STATE TRANSITION ---
+        if (prizeActive && player.overlaps(powerUpPrize)) {
+            isLiquidState = true;
+            prizeActive = false; // Consume the prize
+
+            // Adjust dynamic hitbox and behavior for the liquid state
+            player.width = 80;  // Becomes wide
+            player.height = 20; // Becomes short (puddle)
+        }
+
+        // --- 3. RENDERING ---
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+
+        // Draw the floor
+        shape.setColor(Color.DARK_GRAY);
+        shape.rect(0, 0, Gdx.graphics.getWidth(), 50);
+
+        // Draw the Power-Up Prize (Yellow Square)
+        if (prizeActive) {
+            shape.setColor(Color.YELLOW);
+            shape.rect(powerUpPrize.x, powerUpPrize.y, powerUpPrize.width, powerUpPrize.height);
+        }
+
+        // Draw the Player
+        if (isLiquidState) {
+            shape.setColor(Color.GREEN); // Visually demonstrate the Liquid State
+        } else {
+            shape.setColor(Color.RED);   // Standard Animal State
+        }
+        shape.rect(player.x, player.y, player.width, player.height);
+
+        shape.end();
+    }
+
+    @Override
+    public void dispose () {
+        shape.dispose();
+    }
 }
