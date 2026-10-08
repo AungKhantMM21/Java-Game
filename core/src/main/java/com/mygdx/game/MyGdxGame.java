@@ -2,105 +2,114 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.Screen;
 
 public class MyGdxGame extends ApplicationAdapter {
-    SpriteBatch batch;
-    Texture bgTexture;
-
-    ShapeRenderer shape;
-    Rectangle player;
-    Rectangle powerUpPrize;
-
-    float velocityY = 0;
-    boolean isLiquidState = false;
-    boolean prizeActive = true;
+    enum ScreenState {
+        MENU, GAME
+    }
+    
+    private ScreenState currentScreen = ScreenState.MENU;
+    private Screen screen;
+    private MenuScreen menuScreen;
+    private GameScreen gameScreen;
+    private int currentLevel = 1;
 
     @Override
-    public void create () {
-        batch = new SpriteBatch();
-        // Loads background.png from the assets folder
-        bgTexture = new Texture("background.png");
+    public void create() {
+        showMenu(false);
+    }
+    
+    private void showMenu(boolean canResume) {
+        currentScreen = ScreenState.MENU;
+        menuScreen = new MenuScreen(getBatch(), new MenuScreen.MenuCallback() {
+            @Override
+            public void onPlay() {
+                currentLevel = 1;
+                startNewGame(1);
+            }
 
-        shape = new ShapeRenderer();
-        // Standard Animal State: Tall and narrow hitbox
-        player = new Rectangle(50, 50, 40, 80);
-        powerUpPrize = new Rectangle(500, 50, 30, 30);
+            @Override
+            public void onResume() {
+                if (gameScreen != null) {
+                    currentScreen = ScreenState.GAME;
+                    screen = gameScreen;
+                }
+            }
+
+            @Override
+            public void onRestart() {
+                startNewGame(currentLevel);
+            }
+
+            @Override
+            public void onQuit() {
+                Gdx.app.exit();
+            }
+        }, canResume);
+        
+        screen = menuScreen;
+    }
+
+    private void startNewGame(int level) {
+        if (gameScreen != null) {
+            gameScreen.dispose();
+        }
+        
+        gameScreen = new GameScreen(getBatch(), new GameScreen.GameCallback() {
+            @Override
+            public void onPause() {
+                currentScreen = ScreenState.MENU;
+                showMenu(true);
+            }
+
+            @Override
+            public void onQuit() {
+                currentScreen = ScreenState.MENU;
+                showMenu(true);
+            }
+            
+            @Override
+            public void onRestart() {
+                startNewGame(currentLevel);
+            }
+        });
+        
+        currentLevel = level;
+        gameScreen.setLevel(level);
+        currentScreen = ScreenState.GAME;
+        screen = gameScreen;
     }
 
     @Override
-    public void render () {
-        ScreenUtils.clear(0, 0, 0, 1);
-
-        // --- 1. DRAW BACKGROUND IMAGE ---
-        batch.begin();
-        batch.draw(bgTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        batch.end();
-
-        // --- 2. GAMEPLAY: MOVEMENT & PHYSICS ---
-        float speed = isLiquidState ? 150f : 300f;
-
-        if (Gdx.input.isKeyPressed(Keys.A)) player.x -= speed * Gdx.graphics.getDeltaTime();
-        if (Gdx.input.isKeyPressed(Keys.D)) player.x += speed * Gdx.graphics.getDeltaTime();
-
-        // Basic Jumping Logic
-        if (Gdx.input.isKeyJustPressed(Keys.SPACE) && player.y <= 50) {
-            velocityY = 450f; // Jump force
+    public void render() {
+        if (screen != null) {
+            screen.render(Gdx.graphics.getDeltaTime());
         }
-
-        // Basic Gravity
-        player.y += velocityY * Gdx.graphics.getDeltaTime();
-        if (player.y > 50) {
-            velocityY -= 1200f * Gdx.graphics.getDeltaTime(); // Gravity pulling down
-        } else {
-            player.y = 50; // Lock to floor level
-            velocityY = 0;
-        }
-
-        // --- 3. CORE LOGIC: THE STATE TRANSITION ---
-        if (prizeActive && player.overlaps(powerUpPrize)) {
-            isLiquidState = true;
-            prizeActive = false; // Consume the prize
-
-            // Adjust dynamic hitbox and behavior for the liquid state
-            player.width = 80;  // Becomes wide
-            player.height = 20; // Becomes short (puddle)
-        }
-
-        // --- 4. RENDERING SHAPES ---
-        shape.begin(ShapeRenderer.ShapeType.Filled);
-
-        // Draw the floor
-        shape.setColor(Color.DARK_GRAY);
-        shape.rect(0, 0, Gdx.graphics.getWidth(), 50);
-
-        // Draw the Power-Up Prize (Yellow Square)
-        if (prizeActive) {
-            shape.setColor(Color.YELLOW);
-            shape.rect(powerUpPrize.x, powerUpPrize.y, powerUpPrize.width, powerUpPrize.height);
-        }
-
-        // Draw the Player
-        if (isLiquidState) {
-            shape.setColor(Color.GREEN); // Visually demonstrate the Liquid State
-        } else {
-            shape.setColor(Color.RED);   // Standard Animal State
-        }
-        shape.rect(player.x, player.y, player.width, player.height);
-
-        shape.end();
     }
 
+    private com.badlogic.gdx.graphics.g2d.SpriteBatch getBatch() {
+        if (batch == null) {
+            batch = new com.badlogic.gdx.graphics.g2d.SpriteBatch();
+        }
+        return batch;
+    }
+    
+    private com.badlogic.gdx.graphics.g2d.SpriteBatch batch;
+
     @Override
-    public void dispose () {
-        batch.dispose();
-        bgTexture.dispose();
-        shape.dispose();
+    public void dispose() {
+        if (screen != null) {
+            screen.dispose();
+        }
+        if (menuScreen != null) {
+            menuScreen.dispose();
+        }
+        if (gameScreen != null) {
+            gameScreen.dispose();
+        }
+        if (batch != null) {
+            batch.dispose();
+        }
     }
 }
