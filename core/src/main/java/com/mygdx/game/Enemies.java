@@ -1,59 +1,49 @@
 package com.mygdx.game;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 
 public class Enemies {
-    public Rectangle hitbox;
-    public float speed = 75f;
-    public boolean movingRight = true;
+    private Texture texture;
+    public Rectangle bounds;
+    public float velocityX;
+    private float stateTime;
 
-    // NEW: We track where the dog spawns so it can patrol a specific area
-    private float startX;
-    private float patrolDistance = 250f; // Walks 250 pixels left and right from its spawn
-
-    public Enemies(float x, float y, float width, float height) {
-        hitbox = new Rectangle(x, y, width, height);
-        startX = x; // Remember starting position
-
-        if (Math.random() > 0.5) {
-            movingRight = false;
+    public Enemies(float x, float y, float width, float height, float speed) {
+        bounds = new Rectangle(x, y, width, height);
+        if (Gdx.files.internal("Guard_Dog.png").exists()) {
+            texture = new Texture("Guard_Dog.png");
         }
     }
 
-    // Tightened collision box so the player doesn't die touching invisible empty space
-    public Rectangle getCollisionBox() {
-        return new Rectangle(
-            hitbox.x + 15,
-            hitbox.y,
-            hitbox.width - 30,
-            hitbox.height - 10
-        );
+    public Enemies(Texture texture) {
+        this.texture = texture;
     }
 
-    public void move(float deltaTime) {
-        if (movingRight) {
-            hitbox.x += speed * deltaTime;
+    public void update(float delta) {
+        stateTime += delta;
+        bounds.x += velocityX * delta;
+    }
+
+    public void reverseDirection() {
+        velocityX = -velocityX;
+    }
+
+    public void draw(SpriteBatch batch, Animation<TextureRegion> animation) {
+        // getKeyFrame takes stateTime and a boolean for looping
+        TextureRegion currentFrame = animation.getKeyFrame(stateTime, true);
+
+        boolean movingLeft = velocityX < 0;
+
+        // Draw flipped by negating width without permanently modifying the TextureRegion
+        if (movingLeft) {
+            batch.draw(currentFrame, bounds.x + bounds.width, bounds.y, -bounds.width, bounds.height);
         } else {
-            hitbox.x -= speed * deltaTime;
+            batch.draw(currentFrame, bounds.x, bounds.y, bounds.width, bounds.height);
         }
-
-        // Reverse direction based on their local patrol area, not the screen edge
-        if (hitbox.x <= startX - patrolDistance) {
-            hitbox.x = startX - patrolDistance;
-            movingRight = true;
-        } else if (hitbox.x >= startX + patrolDistance) {
-            hitbox.x = startX + patrolDistance;
-            movingRight = false;
-        }
-    }
-
-    public void draw(SpriteBatch batch, Texture texture) {
-        boolean flipX = !movingRight;
-        batch.draw(texture,
-            hitbox.x, hitbox.y, hitbox.width, hitbox.height,
-            0, 0, texture.getWidth(), texture.getHeight(),
-            flipX, false);
     }
 }
