@@ -1,2 +1,3 @@
+Guard_Dog.png
 background.png
 libgdx.png
