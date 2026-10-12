@@ -1,2 +1,10 @@
 background.png
+dash.png
+dog.png
+dog1.png
+dog3.png
+exit.png
 libgdx.png
+liquidCat1.png
+spell.png
+wall1.png
