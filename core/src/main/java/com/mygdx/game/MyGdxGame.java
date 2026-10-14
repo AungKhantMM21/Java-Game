@@ -66,12 +66,12 @@ public class MyGdxGame extends ApplicationAdapter {
         font.getData().setScale(1.7f);
 
         bgTexture = new Texture("background.png");
-        catTexture = new Texture("dash.png");
+        catTexture = new Texture("dash1.png");
         liquidCatTexture = new Texture("liquidCat1.png");
-        dogTexture = new Texture("dog3.png");
-        wallTexture = new Texture("wall1.png");
-        spellTexture = new Texture("spell.png");
-        exitTexture = new Texture("exit1.png");
+        dogTexture = new Texture("dog4.png");
+        wallTexture = new Texture("wall3.png");
+        spellTexture = new Texture("spell1.png");
+        exitTexture = new Texture("exit2.png");
 
         player = new Player();
 
