@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class MyGdxGame extends ApplicationAdapter {
@@ -52,7 +53,8 @@ public class MyGdxGame extends ApplicationAdapter {
     private int menuSelection = 0;
     private int levelSelection = 0;
 
-    private boolean prizeActive = false;
+    // Spells of this stage that have not been picked up yet.
+    private final Array<Rectangle> spellsLeft = new Array<>();
 
     @Override
     public void create() {
@@ -88,9 +90,9 @@ public class MyGdxGame extends ApplicationAdapter {
 
         player.reset();
 
-        // Stage 1: no spell.
-        // Stages 2 and 3: spell is available.
-        prizeActive = level >= 2;
+        // Stage 1 has no spells; stages 2 and 3 have one before each tall wall.
+        spellsLeft.clear();
+        spellsLeft.addAll(stage.getSpells());
 
         updateCamera();
     }
@@ -227,7 +229,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
     private void updateGame(float delta) {
 
-        // Press P to activate Liquid Cat whenever the spell is owned.
+        // Press P to use the held spell and become Liquid Cat; each spell works once.
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             player.tryBecomeLiquid();
         }
@@ -260,12 +262,15 @@ public class MyGdxGame extends ApplicationAdapter {
 
         player.tickLiquid(delta);
 
-        // Collect the spell without transforming yet.
-        if (prizeActive && stage.getSpell() != null
-            && player.getBounds().overlaps(stage.getSpell())) {
-
-            prizeActive = false;
-            player.collectSpell();
+        // Collect a spell without transforming yet; the cat can hold only one.
+        if (!player.hasSpell()) {
+            for (Rectangle spell : spellsLeft) {
+                if (player.getBounds().overlaps(spell)) {
+                    spellsLeft.removeValue(spell, true);
+                    player.collectSpell();
+                    break;
+                }
+            }
         }
 
         stage.updateDogs(delta);
@@ -319,8 +324,10 @@ public class MyGdxGame extends ApplicationAdapter {
 
         player.respawn();
 
-        // Spell remains collected after pickup.
-        // If it was not collected, it remains available.
+        // A held spell is kept, and every spell pickup comes back,
+        // so a spell used before dying cannot leave a tall wall impassable.
+        spellsLeft.clear();
+        spellsLeft.addAll(stage.getSpells());
         updateCamera();
     }
 
@@ -368,7 +375,7 @@ public class MyGdxGame extends ApplicationAdapter {
                 "Press ENTER to Play",
                 "A / D or Arrow Keys: Move",
                 "SPACE: Jump",
-                "Collect the spell in Stage 2 and 3",
+                "Jump for a spell, P: use it (once)",
                 "M: Pause"
             );
         } else if (state == GameState.PAUSED) {
@@ -415,9 +422,8 @@ public class MyGdxGame extends ApplicationAdapter {
             );
         }
 
-        // Spell pickup only appears in Stages 2 and 3.
-        Rectangle spell = stage.getSpell();
-        if (prizeActive && spell != null) {
+        // Spell pickups only appear in Stages 2 and 3.
+        for (Rectangle spell : spellsLeft) {
             batch.draw(
                 spellTexture,
                 spell.x, spell.y,
@@ -528,6 +534,13 @@ public class MyGdxGame extends ApplicationAdapter {
             font.draw(
                 batch,
                 "Liquid: " + (int) Math.ceil(player.getLiquidTimer()) + "s",
+                left + 20f,
+                VIEW_H - 80f
+            );
+        } else if (player.hasSpell()) {
+            font.draw(
+                batch,
+                "Spell ready: P",
                 left + 20f,
                 VIEW_H - 80f
             );

@@ -5,8 +5,8 @@ import com.badlogic.gdx.math.Rectangle;
 /** A guard dog that patrols back and forth on the ground between two x positions. */
 public class Dog {
 
-    private static final float DOG_W = 60f;
-    private static final float DOG_H = 48f;
+    private static final float DOG_W = 96f;
+    private static final float DOG_H = 64f;
 
     private final Rectangle bounds;
     private final float minX;

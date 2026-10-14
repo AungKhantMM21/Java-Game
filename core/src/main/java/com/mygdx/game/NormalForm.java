@@ -10,12 +10,12 @@ public class NormalForm implements PlayerForm {
 
     @Override
     public float width() {
-        return 76f;
+        return 60f;
     }
 
     @Override
     public float height() {
-        return 90f;
+        return 70f;
     }
 
     @Override

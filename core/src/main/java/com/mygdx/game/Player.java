@@ -48,11 +48,12 @@ public class Player {
         liquidTimer = 0f;
     }
 
-    /** Turns into liquid if the spell is owned and the cat is not liquid already. */
+    /** Turns into liquid if a spell is held and the cat is not liquid already; this uses up the spell. */
     public void tryBecomeLiquid() {
         if (hasSpell && form != LIQUID) {
             form = LIQUID;
             liquidTimer = LIQUID_DURATION;
+            hasSpell = false;
 
             velocityY = 0f;
             bounds.y = MyGdxGame.GROUND_Y;
@@ -159,7 +160,7 @@ public class Player {
         }
     }
 
-    /** Collects the spell without transforming yet. */
+    /** Collects a spell without transforming yet; the cat holds at most one. */
     public void collectSpell() {
         hasSpell = true;
     }

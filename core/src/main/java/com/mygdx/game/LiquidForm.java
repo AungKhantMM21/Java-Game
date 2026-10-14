@@ -10,12 +10,12 @@ public class LiquidForm implements PlayerForm {
 
     @Override
     public float width() {
-        return 82f;
+        return 66f;
     }
 
     @Override
     public float height() {
-        return 30f;
+        return 24f;
     }
 
     @Override

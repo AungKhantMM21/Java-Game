@@ -3,14 +3,14 @@ package com.mygdx.game;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
-/** One stage's layout: its width, walls, holes, patrolling dogs, the optional spell and the exit. */
+/** One stage's layout: its width, walls, holes, patrolling dogs, the spells and the exit. */
 public class Level {
 
     private final float width;
     private final Array<Rectangle> walls = new Array<>();
     private final Array<Rectangle> holes = new Array<>();
     private final Array<Dog> dogs = new Array<>();
-    private Rectangle spell;
+    private final Array<Rectangle> spells = new Array<>();
     private Rectangle exit;
 
     private Level(float width) {
@@ -30,7 +30,7 @@ public class Level {
 
             stage.addHole(2250, 80);
 
-            stage.addDog(280, 200, 420, 100);
+            stage.addDog(280, 200, 380, 100);
             stage.addDog(2450, 2350, 2650, 110);
 
             stage.addExit(2800);
@@ -43,19 +43,21 @@ public class Level {
             stage.addHole(850, 75);
             stage.addWall(1150, 65, 55);
 
-            // Spell pickup for Stage 2.
+            // One spell before each tall, unjumpable wall.
             stage.addSpell(1400);
 
             stage.addWall(1850, 70, 170);
             stage.addHole(2250, 80);
             stage.addWall(2600, 70, 55);
 
+            stage.addSpell(2780);
+
             // Tall, unjumpable wall near the ending.
             stage.addWall(2950, 70, 170);
 
-            stage.addDog(280, 200, 420, 100);
+            stage.addDog(280, 200, 380, 100);
             stage.addDog(1600, 1500, 1750, 120);
-            stage.addDog(3250, 3100, 3400, 120);
+            stage.addDog(3200, 3100, 3300, 120);
 
             stage.addExit(3410);
         }
@@ -67,23 +69,29 @@ public class Level {
             stage.addHole(850, 75);
             stage.addWall(1150, 65, 55);
 
-            // Spell pickup for Stage 3.
+            // One spell before each tall, unjumpable wall.
             stage.addSpell(1400);
 
             stage.addWall(1850, 70, 170);
             stage.addHole(2250, 80);
             stage.addWall(2600, 70, 55);
+
+            stage.addSpell(2860);
+
             stage.addWall(2950, 70, 170);
+
+            // Before the hole: the liquid cat cannot jump over it.
+            stage.addSpell(3100);
 
             stage.addHole(3450, 85);
 
             // Final tall, unjumpable wall.
             stage.addWall(3750, 70, 170);
 
-            stage.addDog(280, 200, 420, 100);
+            stage.addDog(280, 200, 380, 100);
             stage.addDog(1600, 1500, 1750, 120);
-            stage.addDog(2500, 2400, 2700, 120);
-            stage.addDog(3500, 3300, 3600, 130);
+            stage.addDog(2420, 2345, 2490, 120);
+            stage.addDog(3300, 3200, 3340, 130);
 
             stage.addExit(4020);
         }
@@ -99,16 +107,21 @@ public class Level {
         holes.add(new Rectangle(x, 0f, width, MyGdxGame.GROUND_Y));
     }
 
+    /**
+     * A dog walks from {@code minX} to {@code maxX} plus its own width (96),
+     * so keep that whole range on flat ground, clear of walls, holes and the exit.
+     */
     private void addDog(
         float x, float minX, float maxX, float speed
     ) {
         dogs.add(new Dog(x, minX, maxX, speed));
     }
 
+    /** Floats a spell above a standing cat's head, so it takes a jump to collect. */
     private void addSpell(float x) {
-        spell = new Rectangle(
-            x, MyGdxGame.GROUND_Y + 55f, 38f, 38f
-        );
+        spells.add(new Rectangle(
+            x, MyGdxGame.GROUND_Y + 100f, 56f, 56f
+        ));
     }
 
     private void addExit(float x) {
@@ -151,9 +164,9 @@ public class Level {
         return dogs;
     }
 
-    /** The spell pickup, or {@code null} on a stage without one. */
-    public Rectangle getSpell() {
-        return spell;
+    /** The spell pickups; empty on a stage without any. */
+    public Array<Rectangle> getSpells() {
+        return spells;
     }
 
     public Rectangle getExit() {
