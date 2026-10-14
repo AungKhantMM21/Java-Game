@@ -37,7 +37,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
 
     // Long enough to reach the later tall wall.
-    private static final float LIQUID_DURATION = 15f;
+    private static final float LIQUID_DURATION = 5f;
 
     private SpriteBatch batch;
     private ShapeRenderer shape;
@@ -117,7 +117,7 @@ public class MyGdxGame extends ApplicationAdapter {
         dogTexture = new Texture("dog3.png");
         wallTexture = new Texture("wall1.png");
         spellTexture = new Texture("spell.png");
-        exitTexture = new Texture("exit.png");
+        exitTexture = new Texture("exit1.png");
 
         player = new Rectangle();
 
