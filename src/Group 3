@@ -1,0 +1,18 @@
+Group 3 Game Name: Paws & Puddles
+1. Game Concept
+Overview & Genre: A 2D side-scrolling platformer where the player controls a feline protagonist navigating through a hazardous environment to locate an exit.
+Inspiration: The core gameplay mechanics, hazard evasion, and power-up collection are directly inspired by Super Mario Bros.
+Thematic Element: The game incorporates "The liquid cat" theme. The character can collect a special spell that transitions the cat into a fluid state, altering its physical properties to overcome specific obstacles.
+ PDF+ 1
+2. Gameplay Loop
+Core Experience: The player starts at the left side of the stage and uses keyboard inputs to move forward, backward, and jump. The player must carefully time jumps across platforming gaps and evade patrolling guard dogs.
+Power-Up Mechanic: During the level, the player can collect the "liquid cat" spell. This transforms the character, allowing them to utilize the fluid state to bypass specific threats or obstacles that the standard physical form cannot handle.
+ PDF
+Win Condition: The player wins the current level and automatically advances to the next stage by successfully surviving all obstacles and reaching the designated exit point.
+Loss Condition: The player loses, resulting in character death, if they fail a jump and fall into a hole between landmasses, or if they collide with a guard dog while in their vulnerable standard form.
+3. Roles & Responsibilities
+Pai (Engine & World Architect): Responsible for game loop, background rendering, and screen transitions (Main Menu, Gameplay, and Game Over states). The execution plan involves setting up the libGDX application lifecycle and managing the flow between UI screens and active gameplay environments.
+Ak (Player Logic & Physics Coder): Responsible for the main character's physics, implementing gravity, jumping arcs, and keyboard movement controls. The execution plan includes building the Object-Oriented state logic that governs the cat's movement limits and handles the physical transition when the liquid spell is activated.
+William (Enemies & Collisions Coder): Responsible for implementing the environmental obstacles (holes), the collectible power-up item, and the guard dog AI. The execution plan triggers the win conditions, loss conditions, and enemy patrol boundaries.
+
+

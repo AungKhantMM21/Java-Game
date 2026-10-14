@@ -1,2 +1,6 @@
+Guard_Dog.png
+SpikeTrap.png
+Wall.png
 background.png
+dog_walk.png
 libgdx.png
