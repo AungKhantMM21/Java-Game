@@ -20,25 +20,10 @@ public class MyGdxGame extends ApplicationAdapter {
 
     private static final float VIEW_W = 960f;
     private static final float VIEW_H = 540f;
-    private static final float GROUND_Y = 60f;
-
-    private static final float CAT_W = 76f;
-    private static final float CAT_H = 90f;
-    private static final float PUDDLE_W = 82f;
-    private static final float PUDDLE_H = 30f;
+    static final float GROUND_Y = 60f;
 
     private static final float DOG_W = 60f;
     private static final float DOG_H = 48f;
-
-    private static final float NORMAL_SPEED = 280f;
-    private static final float LIQUID_SPEED = 220f;
-    private static final float GRAVITY = 1500f;
-    private static final float JUMP_SPEED = 620f;
-
-
-
-    // Long enough to reach the later tall wall.
-    private static final float LIQUID_DURATION = 5f;
 
     private SpriteBatch batch;
     private ShapeRenderer shape;
@@ -64,7 +49,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
     private GameState state = GameState.MENU;
 
-    private Rectangle player;
+    private Player player;
     private Rectangle spell;
     private Rectangle exit;
 
@@ -92,14 +77,9 @@ public class MyGdxGame extends ApplicationAdapter {
     private int menuSelection = 0;
     private int levelSelection = 0;
 
-    private float velocityY = 0f;
-    private float liquidTimer = 0f;
     private float levelWidth = 3000f;
 
-    private boolean isLiquidState = false;
     private boolean prizeActive = false;
-    private boolean onGround = true;
-    private boolean hasSpell = false;
 
     @Override
     public void create() {
@@ -122,7 +102,7 @@ public class MyGdxGame extends ApplicationAdapter {
         spellTexture = new Texture("spell.png");
         exitTexture = new Texture("exit1.png");
 
-        player = new Rectangle();
+        player = new Player();
 
         loadLevel(1);
     }
@@ -138,13 +118,7 @@ public class MyGdxGame extends ApplicationAdapter {
         holes.clear();
         dogs.clear();
 
-        isLiquidState = false;
-        hasSpell = false;
-        liquidTimer = 0f;
-        velocityY = 0f;
-        onGround = true;
-
-        player.set(100f, GROUND_Y, CAT_W, CAT_H);
+        player.reset();
 
         // Stage 1: no spell.
         // Stages 2 and 3: spell is available.
@@ -385,27 +359,13 @@ public class MyGdxGame extends ApplicationAdapter {
 
     private void updateGame(float delta) {
 
-
         // Press P to activate Liquid Cat whenever the spell is owned.
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P)
-            && hasSpell
-            && !isLiquidState) {
-
-            isLiquidState = true;
-            liquidTimer = LIQUID_DURATION;
-
-            velocityY = 0f;
-            player.y = GROUND_Y;
-            onGround = true;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
+            player.tryBecomeLiquid();
         }
 
-        float speed = isLiquidState
-            ? LIQUID_SPEED : NORMAL_SPEED;
-        float playerWidth = isLiquidState ? PUDDLE_W : CAT_W;
-        float playerHeight = isLiquidState ? PUDDLE_H : CAT_H;
-
-        player.width = playerWidth;
-        player.height = playerHeight;
+        float speed = player.speed();
+        player.applyFormSize();
 
         float moveX = 0f;
 
@@ -419,101 +379,33 @@ public class MyGdxGame extends ApplicationAdapter {
             moveX += speed * delta;
         }
 
-        player.x += moveX;
+        player.moveHorizontally(moveX, walls, levelWidth);
 
-        // Normal Cat is blocked by walls.
-        // Liquid Cat can pass through every wall.
-        if (!isLiquidState) {
-            for (Rectangle wall : walls) {
-                if (player.overlaps(wall)) {
-                    if (moveX > 0f) {
-                        player.x = wall.x - player.width;
-                    } else if (moveX < 0f) {
-                        player.x = wall.x + wall.width;
-                    }
-                }
-            }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            player.tryJump();
         }
 
-        player.x = Math.max(
-            0f,
-            Math.min(player.x, levelWidth - player.width)
-        );
+        player.applyGravity(delta, walls);
 
-        // Jumping is only available in normal form.
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
-            && onGround && !isLiquidState) {
-            velocityY = JUMP_SPEED;
-            onGround = false;
-        }
+        Rectangle body = player.getBounds();
+        player.landOnGround(overlapsHole(body.x, body.width));
 
-        // Gravity.
-        velocityY -= GRAVITY * delta;
-        player.y += velocityY * delta;
-        onGround = false;
-
-        // Land on top of walls in normal form.
-        if (!isLiquidState) {
-            for (Rectangle wall : walls) {
-                boolean horizontalOverlap =
-                    player.x + player.width > wall.x
-                        && player.x < wall.x + wall.width;
-
-                boolean crossedWallTop =
-                    player.y <= wall.y + wall.height
-                        && player.y + player.height
-                        >= wall.y + wall.height;
-
-                if (horizontalOverlap
-                    && velocityY <= 0f
-                    && crossedWallTop) {
-
-                    player.y = wall.y + wall.height;
-                    velocityY = 0f;
-                    onGround = true;
-                }
-            }
-        }
-
-        boolean overHole = overlapsHole(
-            player.x, player.width
-        );
-
-        // The ground is solid except over holes.
-        if (!overHole && player.y <= GROUND_Y
-            && velocityY <= 0f) {
-            player.y = GROUND_Y;
-            velocityY = 0f;
-            onGround = true;
-        }
-
-        // Liquid form expires automatically.
-        if (isLiquidState) {
-            liquidTimer -= delta;
-
-            if (liquidTimer <= 0f) {
-                isLiquidState = false;
-                liquidTimer = 0f;
-                player.width = CAT_W;
-                player.height = CAT_H;
-            }
-        }
-
+        player.tickLiquid(delta);
 
         // Collect the spell without transforming yet.
         if (prizeActive && spell != null
-            && player.overlaps(spell)) {
+            && player.getBounds().overlaps(spell)) {
 
             prizeActive = false;
-            hasSpell = true;
+            player.collectSpell();
         }
 
         updateDogs(delta);
 
         // Dogs only hurt the cat in normal form.
-        if (!isLiquidState) {
+        if (!player.isLiquid()) {
             for (Dog dog : dogs) {
-                if (player.overlaps(dog.bounds)) {
+                if (player.getBounds().overlaps(dog.bounds)) {
                     loseLife();
                     return;
                 }
@@ -522,9 +414,9 @@ public class MyGdxGame extends ApplicationAdapter {
 
         updateDogs(delta);
 
-        if (!isLiquidState) {
+        if (!player.isLiquid()) {
         for (Dog dog : dogs) {
-            if (player.overlaps(dog.bounds)) {
+            if (player.getBounds().overlaps(dog.bounds)) {
                 loseLife();
                 return;
             }
@@ -532,12 +424,12 @@ public class MyGdxGame extends ApplicationAdapter {
     }
 
         // Holes are dangerous in both forms.
-        if (player.y + player.height < GROUND_Y - 55f) {
+        if (player.fellIntoHole()) {
             loseLife();
             return;
         }
 
-        if (player.overlaps(exit)) {
+        if (player.getBounds().overlaps(exit)) {
             if (currentLevel < 3) {
                 loadLevel(currentLevel + 1);
             } else {
@@ -583,13 +475,7 @@ public class MyGdxGame extends ApplicationAdapter {
             return;
         }
 
-        player.set(100f, GROUND_Y, CAT_W, CAT_H);
-
-        velocityY = 0f;
-        onGround = true;
-
-        isLiquidState = false;
-        liquidTimer = 0f;
+        player.respawn();
 
         // Spell remains collected after pickup.
         // If it was not collected, it remains available.
@@ -601,7 +487,8 @@ public class MyGdxGame extends ApplicationAdapter {
             return;
         }
 
-        float cameraX = player.x + player.width / 2f;
+        Rectangle body = player.getBounds();
+        float cameraX = body.x + body.width / 2f;
 
         camera.position.set(
             Math.max(
@@ -712,17 +599,18 @@ public class MyGdxGame extends ApplicationAdapter {
         }
 
         // Player.
-        if (isLiquidState) {
+        Rectangle body = player.getBounds();
+        if (player.isLiquid()) {
             batch.draw(
                 liquidCatTexture,
-                player.x, player.y,
-                player.width, player.height
+                body.x, body.y,
+                body.width, body.height
             );
         } else {
             batch.draw(
                 catTexture,
-                player.x, player.y,
-                player.width, player.height
+                body.x, body.y,
+                body.width, body.height
             );
         }
 
@@ -791,10 +679,10 @@ public class MyGdxGame extends ApplicationAdapter {
             VIEW_H - 50f
         );
 
-        if (isLiquidState) {
+        if (player.isLiquid()) {
             font.draw(
                 batch,
-                "Liquid: " + (int) Math.ceil(liquidTimer) + "s",
+                "Liquid: " + (int) Math.ceil(player.getLiquidTimer()) + "s",
                 left + 20f,
                 VIEW_H - 80f
             );
