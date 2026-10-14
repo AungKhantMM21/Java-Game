@@ -48,8 +48,11 @@ public class Player {
         liquidTimer = 0f;
     }
 
-    /** Turns into liquid if a spell is held and the cat is not liquid already; this uses up the spell. */
-    public void tryBecomeLiquid() {
+    /**
+     * Turns into liquid if a spell is held and the cat is not liquid already; this uses up the spell.
+     * Returns true if it transformed.
+     */
+    public boolean tryBecomeLiquid() {
         if (hasSpell && form != LIQUID) {
             form = LIQUID;
             liquidTimer = LIQUID_DURATION;
@@ -58,7 +61,9 @@ public class Player {
             velocityY = 0f;
             bounds.y = MyGdxGame.GROUND_Y;
             onGround = true;
+            return true;
         }
+        return false;
     }
 
     /** Horizontal speed of the current form, in pixels per second. */
@@ -96,12 +101,14 @@ public class Player {
         );
     }
 
-    /** Jumps if standing on something; jumping is only available in normal form. */
-    public void tryJump() {
+    /** Jumps if standing on something; jumping is only available in normal form. Returns true if it jumped. */
+    public boolean tryJump() {
         if (onGround && form.canJump()) {
             velocityY = JUMP_SPEED;
             onGround = false;
+            return true;
         }
+        return false;
     }
 
     /** Applies gravity for one frame and lands on top of walls in normal form. */

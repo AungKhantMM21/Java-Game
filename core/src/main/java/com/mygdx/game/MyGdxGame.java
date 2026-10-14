@@ -4,6 +4,8 @@ package com.mygdx.game;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -33,6 +35,13 @@ public class MyGdxGame extends ApplicationAdapter {
     private Texture wallTexture;
     private Texture spellTexture;
     private Texture exitTexture;
+
+    private Music bgMusic;
+    private Sound jumpSound;
+    private Sound deadSound;
+    private Sound spellSound;
+    private Sound victorySound;
+    private Sound transformSound;
 
     private enum GameState {
         MENU,
@@ -75,6 +84,15 @@ public class MyGdxGame extends ApplicationAdapter {
         spellTexture = new Texture("spell1.png");
         exitTexture = new Texture("exit2.png");
 
+        bgMusic = Gdx.audio.newMusic(Gdx.files.internal("bgm.wav"));
+        bgMusic.setLooping(true);
+        bgMusic.setVolume(0.4f);
+        jumpSound = Gdx.audio.newSound(Gdx.files.internal("jump.wav"));
+        deadSound = Gdx.audio.newSound(Gdx.files.internal("dead.wav"));
+        spellSound = Gdx.audio.newSound(Gdx.files.internal("spell.wav"));
+        victorySound = Gdx.audio.newSound(Gdx.files.internal("victory.wav"));
+        transformSound = Gdx.audio.newSound(Gdx.files.internal("transform.wav"));
+
         player = new Player();
 
         loadLevel(1);
@@ -108,6 +126,14 @@ public class MyGdxGame extends ApplicationAdapter {
         );
 
         handleMenuInput();
+
+        // Background music plays everywhere except the pause menu
+        // and the final win screen, where the victory fanfare plays.
+        if (state == GameState.PAUSED || state == GameState.VICTORY) {
+            bgMusic.pause();
+        } else if (!bgMusic.isPlaying()) {
+            bgMusic.play();
+        }
 
         // No game updates while paused or in a menu.
         if (state == GameState.PLAYING) {
@@ -231,7 +257,9 @@ public class MyGdxGame extends ApplicationAdapter {
 
         // Press P to use the held spell and become Liquid Cat; each spell works once.
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
-            player.tryBecomeLiquid();
+            if (player.tryBecomeLiquid()) {
+                transformSound.play(0.8f);
+            }
         }
 
         float speed = player.speed();
@@ -252,7 +280,9 @@ public class MyGdxGame extends ApplicationAdapter {
         player.moveHorizontally(moveX, stage.getWalls(), stage.getWidth());
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            player.tryJump();
+            if (player.tryJump()) {
+                jumpSound.play(0.6f);
+            }
         }
 
         player.applyGravity(delta, stage.getWalls());
@@ -268,6 +298,7 @@ public class MyGdxGame extends ApplicationAdapter {
                 if (player.getBounds().overlaps(spell)) {
                     spellsLeft.removeValue(spell, true);
                     player.collectSpell();
+                    spellSound.play(0.7f);
                     break;
                 }
             }
@@ -303,6 +334,7 @@ public class MyGdxGame extends ApplicationAdapter {
         }
 
         if (player.getBounds().overlaps(stage.getExit())) {
+            victorySound.play(0.8f);
             if (currentLevel < 3) {
                 loadLevel(currentLevel + 1);
             } else {
@@ -315,6 +347,7 @@ public class MyGdxGame extends ApplicationAdapter {
     }
 
     private void loseLife() {
+        deadSound.play(0.8f);
         lives--;
 
         if (lives <= 0) {
@@ -752,5 +785,12 @@ public class MyGdxGame extends ApplicationAdapter {
         wallTexture.dispose();
         spellTexture.dispose();
         exitTexture.dispose();
+
+        bgMusic.dispose();
+        jumpSound.dispose();
+        deadSound.dispose();
+        spellSound.dispose();
+        victorySound.dispose();
+        transformSound.dispose();
     }
 }
