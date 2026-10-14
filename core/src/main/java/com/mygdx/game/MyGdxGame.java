@@ -198,6 +198,7 @@ public class MyGdxGame extends ApplicationAdapter {
             velocityY = 450f;
             isGrounded = false;
         }
+    }
 
         // Apply Gravity
         velocityY -= 1200f * delta;
@@ -236,6 +237,10 @@ public class MyGdxGame extends ApplicationAdapter {
                 }
             }
         }
+        return batch;
+    }
+    
+    private com.badlogic.gdx.graphics.g2d.SpriteBatch batch;
 
         // --- CORE LOGIC: THE STATE TRANSITION ---
         if (prizeActive && player.overlaps(powerUpPrize)) {
