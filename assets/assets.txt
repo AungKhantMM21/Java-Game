@@ -5,6 +5,11 @@ dog.png
 dog1.png
 dog3.png
 exit.png
+Guard_Dog.png
+SpikeTrap.png
+Wall.png
+background.png
+dog_walk.png
 libgdx.png
 liquidCat1.png
 spell.png
