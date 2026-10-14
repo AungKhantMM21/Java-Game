@@ -3,16 +3,15 @@ package com.mygdx.game;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
-/** The cat: its position, jump and gravity, collisions with walls and ground, and the timed liquid form. */
+/**
+ * The cat: its position, jump and gravity, collisions with walls and ground, and the timed liquid form.
+ * What differs between the forms is asked of the current {@link PlayerForm}.
+ */
 public class Player {
 
-    static final float CAT_W = 76f;
-    static final float CAT_H = 90f;
-    static final float PUDDLE_W = 82f;
-    static final float PUDDLE_H = 30f;
+    private static final PlayerForm NORMAL = new NormalForm();
+    private static final PlayerForm LIQUID = new LiquidForm();
 
-    private static final float NORMAL_SPEED = 280f;
-    private static final float LIQUID_SPEED = 220f;
     private static final float GRAVITY = 1500f;
     private static final float JUMP_SPEED = 620f;
     private static final float START_X = 100f;
@@ -23,36 +22,36 @@ public class Player {
     private final Rectangle bounds = new Rectangle();
     private float velocityY = 0f;
     private float liquidTimer = 0f;
-    private boolean isLiquidState = false;
+    private PlayerForm form = NORMAL;
     private boolean onGround = true;
     private boolean hasSpell = false;
 
     /** Puts the cat at the start of a freshly loaded stage, without the spell. */
     public void reset() {
-        isLiquidState = false;
+        form = NORMAL;
         hasSpell = false;
         liquidTimer = 0f;
         velocityY = 0f;
         onGround = true;
 
-        bounds.set(START_X, MyGdxGame.GROUND_Y, CAT_W, CAT_H);
+        bounds.set(START_X, MyGdxGame.GROUND_Y, NORMAL.width(), NORMAL.height());
     }
 
     /** Puts the cat back at the start after losing a life; a collected spell is kept. */
     public void respawn() {
-        bounds.set(START_X, MyGdxGame.GROUND_Y, CAT_W, CAT_H);
+        bounds.set(START_X, MyGdxGame.GROUND_Y, NORMAL.width(), NORMAL.height());
 
         velocityY = 0f;
         onGround = true;
 
-        isLiquidState = false;
+        form = NORMAL;
         liquidTimer = 0f;
     }
 
     /** Turns into liquid if the spell is owned and the cat is not liquid already. */
     public void tryBecomeLiquid() {
-        if (hasSpell && !isLiquidState) {
-            isLiquidState = true;
+        if (hasSpell && form != LIQUID) {
+            form = LIQUID;
             liquidTimer = LIQUID_DURATION;
 
             velocityY = 0f;
@@ -63,13 +62,13 @@ public class Player {
 
     /** Horizontal speed of the current form, in pixels per second. */
     public float speed() {
-        return isLiquidState ? LIQUID_SPEED : NORMAL_SPEED;
+        return form.speed();
     }
 
     /** Sets the hitbox to the size of the current form. */
     public void applyFormSize() {
-        bounds.width = isLiquidState ? PUDDLE_W : CAT_W;
-        bounds.height = isLiquidState ? PUDDLE_H : CAT_H;
+        bounds.width = form.width();
+        bounds.height = form.height();
     }
 
     /** Moves by {@code moveX}, stopping at walls in normal form, and keeps the cat inside the stage. */
@@ -78,7 +77,7 @@ public class Player {
 
         // Normal Cat is blocked by walls.
         // Liquid Cat can pass through every wall.
-        if (!isLiquidState) {
+        if (form.isBlockedByWalls()) {
             for (Rectangle wall : walls) {
                 if (bounds.overlaps(wall)) {
                     if (moveX > 0f) {
@@ -98,7 +97,7 @@ public class Player {
 
     /** Jumps if standing on something; jumping is only available in normal form. */
     public void tryJump() {
-        if (onGround && !isLiquidState) {
+        if (onGround && form.canJump()) {
             velocityY = JUMP_SPEED;
             onGround = false;
         }
@@ -111,7 +110,7 @@ public class Player {
         onGround = false;
 
         // Land on top of walls in normal form.
-        if (!isLiquidState) {
+        if (form.isBlockedByWalls()) {
             for (Rectangle wall : walls) {
                 boolean horizontalOverlap =
                     bounds.x + bounds.width > wall.x
@@ -148,14 +147,14 @@ public class Player {
     /** Counts down the liquid form and turns back into a cat when it runs out. */
     public void tickLiquid(float delta) {
         // Liquid form expires automatically.
-        if (isLiquidState) {
+        if (form == LIQUID) {
             liquidTimer -= delta;
 
             if (liquidTimer <= 0f) {
-                isLiquidState = false;
+                form = NORMAL;
                 liquidTimer = 0f;
-                bounds.width = CAT_W;
-                bounds.height = CAT_H;
+                bounds.width = NORMAL.width();
+                bounds.height = NORMAL.height();
             }
         }
     }
@@ -175,7 +174,12 @@ public class Player {
     }
 
     public boolean isLiquid() {
-        return isLiquidState;
+        return form == LIQUID;
+    }
+
+    /** The form the cat is in right now. */
+    public PlayerForm getForm() {
+        return form;
     }
 
     public boolean hasSpell() {

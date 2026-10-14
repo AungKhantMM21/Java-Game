@@ -403,7 +403,7 @@ public class MyGdxGame extends ApplicationAdapter {
         updateDogs(delta);
 
         // Dogs only hurt the cat in normal form.
-        if (!player.isLiquid()) {
+        if (player.getForm().isHurtByDogs()) {
             for (Dog dog : dogs) {
                 if (player.getBounds().overlaps(dog.bounds)) {
                     loseLife();
@@ -414,7 +414,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
         updateDogs(delta);
 
-        if (!player.isLiquid()) {
+        if (player.getForm().isHurtByDogs()) {
         for (Dog dog : dogs) {
             if (player.getBounds().overlaps(dog.bounds)) {
                 loseLife();
