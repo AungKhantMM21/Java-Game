@@ -22,9 +22,6 @@ public class MyGdxGame extends ApplicationAdapter {
     private static final float VIEW_H = 540f;
     static final float GROUND_Y = 60f;
 
-    private static final float DOG_W = 60f;
-    private static final float DOG_H = 48f;
-
     private SpriteBatch batch;
     private ShapeRenderer shape;
     private OrthographicCamera camera;
@@ -56,21 +53,6 @@ public class MyGdxGame extends ApplicationAdapter {
     private final Array<Rectangle> walls = new Array<>();
     private final Array<Rectangle> holes = new Array<>();
     private final Array<Dog> dogs = new Array<>();
-
-    private static class Dog {
-        Rectangle bounds;
-        float minX;
-        float maxX;
-        float speed;
-        int direction = 1;
-
-        Dog(float x, float minX, float maxX, float speed) {
-            bounds = new Rectangle(x, GROUND_Y, DOG_W, DOG_H);
-            this.minX = minX;
-            this.maxX = maxX;
-            this.speed = speed;
-        }
-    }
 
     private int currentLevel = 1;
     private int lives = 3;
@@ -405,7 +387,7 @@ public class MyGdxGame extends ApplicationAdapter {
         // Dogs only hurt the cat in normal form.
         if (player.getForm().isHurtByDogs()) {
             for (Dog dog : dogs) {
-                if (player.getBounds().overlaps(dog.bounds)) {
+                if (player.getBounds().overlaps(dog.getBounds())) {
                     loseLife();
                     return;
                 }
@@ -416,7 +398,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
         if (player.getForm().isHurtByDogs()) {
         for (Dog dog : dogs) {
-            if (player.getBounds().overlaps(dog.bounds)) {
+            if (player.getBounds().overlaps(dog.getBounds())) {
                 loseLife();
                 return;
             }
@@ -443,17 +425,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
     private void updateDogs(float delta) {
         for (Dog dog : dogs) {
-            dog.bounds.x += dog.speed * dog.direction * delta;
-
-            if (dog.bounds.x <= dog.minX) {
-                dog.bounds.x = dog.minX;
-                dog.direction = 1;
-            }
-
-            if (dog.bounds.x >= dog.maxX) {
-                dog.bounds.x = dog.maxX;
-                dog.direction = -1;
-            }
+            dog.update(delta);
         }
     }
 
@@ -591,10 +563,11 @@ public class MyGdxGame extends ApplicationAdapter {
 
         // Dogs.
         for (Dog dog : dogs) {
+            Rectangle dogBody = dog.getBounds();
             batch.draw(
                 dogTexture,
-                dog.bounds.x, dog.bounds.y,
-                dog.bounds.width, dog.bounds.height
+                dogBody.x, dogBody.y,
+                dogBody.width, dogBody.height
             );
         }
 
