@@ -14,7 +14,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.Array;
 
 public class MyGdxGame extends ApplicationAdapter {
 
@@ -47,19 +46,12 @@ public class MyGdxGame extends ApplicationAdapter {
     private GameState state = GameState.MENU;
 
     private Player player;
-    private Rectangle spell;
-    private Rectangle exit;
-
-    private final Array<Rectangle> walls = new Array<>();
-    private final Array<Rectangle> holes = new Array<>();
-    private final Array<Dog> dogs = new Array<>();
+    private Level stage;
 
     private int currentLevel = 1;
     private int lives = 3;
     private int menuSelection = 0;
     private int levelSelection = 0;
-
-    private float levelWidth = 3000f;
 
     private boolean prizeActive = false;
 
@@ -95,118 +87,15 @@ public class MyGdxGame extends ApplicationAdapter {
 
     private void loadLevel(int level) {
         currentLevel = level;
-
-        walls.clear();
-        holes.clear();
-        dogs.clear();
+        stage = Level.forStage(level);
 
         player.reset();
 
         // Stage 1: no spell.
         // Stages 2 and 3: spell is available.
         prizeActive = level >= 2;
-        spell = null;
 
-        if (level == 1) {
-            levelWidth = 3000f;
-
-            addWall(500, 60, 50);
-            addHole(850, 75);
-            addWall(1150, 65, 55);
-
-            addHole(2250, 80);
-
-            addDog(280, 200, 420, 100);
-            addDog(2450, 2350, 2650, 110);
-
-            addExit(2800);
-        }
-
-        else if (level == 2) {
-            levelWidth = 3600f;
-
-            addWall(500, 60, 50);
-            addHole(850, 75);
-            addWall(1150, 65, 55);
-
-            // Spell pickup for Stage 2.
-            addSpell(1400);
-
-            addWall(1850, 70, 170);
-            addHole(2250, 80);
-            addWall(2600, 70, 55);
-
-            // Tall, unjumpable wall near the ending.
-            addWall(2950, 70, 170);
-
-            addDog(280, 200, 420, 100);
-            addDog(1600, 1500, 1750, 120);
-            addDog(3250, 3100, 3400, 120);
-
-            addExit(3410);
-        }
-
-        else {
-            levelWidth = 4200f;
-
-            addWall(500, 60, 50);
-            addHole(850, 75);
-            addWall(1150, 65, 55);
-
-            // Spell pickup for Stage 3.
-            addSpell(1400);
-
-            addWall(1850, 70, 170);
-            addHole(2250, 80);
-            addWall(2600, 70, 55);
-            addWall(2950, 70, 170);
-
-            addHole(3450, 85);
-
-            // Final tall, unjumpable wall.
-            addWall(3750, 70, 170);
-
-            addDog(280, 200, 420, 100);
-            addDog(1600, 1500, 1750, 120);
-            addDog(2500, 2400, 2700, 120);
-            addDog(3500, 3300, 3600, 130);
-
-            addExit(4020);
-        }
-
-        addExitRectangle();
         updateCamera();
-    }
-
-    private void addWall(float x, float width, float height) {
-        walls.add(new Rectangle(x, GROUND_Y, width, height));
-    }
-
-    private void addHole(float x, float width) {
-        holes.add(new Rectangle(x, 0f, width, GROUND_Y));
-    }
-
-    private void addDog(
-        float x, float minX, float maxX, float speed
-    ) {
-        dogs.add(new Dog(x, minX, maxX, speed));
-    }
-
-    private void addSpell(float x) {
-        spell = new Rectangle(
-            x, GROUND_Y + 55f, 38f, 38f
-        );
-    }
-
-    private void addExit(float x) {
-        exit = new Rectangle(
-            x, GROUND_Y, 55f, 100f
-        );
-    }
-
-    private void addExitRectangle() {
-        // Exit is set by addExit() in each stage.
-        // This method is intentionally left empty.
     }
 
     // ==================================================
@@ -361,32 +250,32 @@ public class MyGdxGame extends ApplicationAdapter {
             moveX += speed * delta;
         }
 
-        player.moveHorizontally(moveX, walls, levelWidth);
+        player.moveHorizontally(moveX, stage.getWalls(), stage.getWidth());
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             player.tryJump();
         }
 
-        player.applyGravity(delta, walls);
+        player.applyGravity(delta, stage.getWalls());
 
         Rectangle body = player.getBounds();
-        player.landOnGround(overlapsHole(body.x, body.width));
+        player.landOnGround(stage.overlapsHole(body.x, body.width));
 
         player.tickLiquid(delta);
 
         // Collect the spell without transforming yet.
-        if (prizeActive && spell != null
-            && player.getBounds().overlaps(spell)) {
+        if (prizeActive && stage.getSpell() != null
+            && player.getBounds().overlaps(stage.getSpell())) {
 
             prizeActive = false;
             player.collectSpell();
         }
 
-        updateDogs(delta);
+        stage.updateDogs(delta);
 
         // Dogs only hurt the cat in normal form.
         if (player.getForm().isHurtByDogs()) {
-            for (Dog dog : dogs) {
+            for (Dog dog : stage.getDogs()) {
                 if (player.getBounds().overlaps(dog.getBounds())) {
                     loseLife();
                     return;
@@ -394,10 +283,10 @@ public class MyGdxGame extends ApplicationAdapter {
             }
         }
 
-        updateDogs(delta);
+        stage.updateDogs(delta);
 
         if (player.getForm().isHurtByDogs()) {
-        for (Dog dog : dogs) {
+        for (Dog dog : stage.getDogs()) {
             if (player.getBounds().overlaps(dog.getBounds())) {
                 loseLife();
                 return;
@@ -411,7 +300,7 @@ public class MyGdxGame extends ApplicationAdapter {
             return;
         }
 
-        if (player.getBounds().overlaps(exit)) {
+        if (player.getBounds().overlaps(stage.getExit())) {
             if (currentLevel < 3) {
                 loadLevel(currentLevel + 1);
             } else {
@@ -421,22 +310,6 @@ public class MyGdxGame extends ApplicationAdapter {
         }
 
         updateCamera();
-    }
-
-    private void updateDogs(float delta) {
-        for (Dog dog : dogs) {
-            dog.update(delta);
-        }
-    }
-
-    private boolean overlapsHole(float x, float width) {
-        for (Rectangle hole : holes) {
-            if (x + width > hole.x
-                && x < hole.x + hole.width) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void loseLife() {
@@ -465,7 +338,7 @@ public class MyGdxGame extends ApplicationAdapter {
         camera.position.set(
             Math.max(
                 VIEW_W / 2f,
-                Math.min(cameraX, levelWidth - VIEW_W / 2f)
+                Math.min(cameraX, stage.getWidth() - VIEW_W / 2f)
             ),
             VIEW_H / 2f,
             0f
@@ -537,7 +410,7 @@ public class MyGdxGame extends ApplicationAdapter {
         );
 
         // Walls.
-        for (Rectangle wall : walls) {
+        for (Rectangle wall : stage.getWalls()) {
             batch.draw(
                 wallTexture,
                 wall.x, wall.y,
@@ -546,6 +419,7 @@ public class MyGdxGame extends ApplicationAdapter {
         }
 
         // Spell pickup only appears in Stages 2 and 3.
+        Rectangle spell = stage.getSpell();
         if (prizeActive && spell != null) {
             batch.draw(
                 spellTexture,
@@ -555,6 +429,7 @@ public class MyGdxGame extends ApplicationAdapter {
         }
 
         // Exit.
+        Rectangle exit = stage.getExit();
         batch.draw(
             exitTexture,
             exit.x, exit.y,
@@ -562,7 +437,7 @@ public class MyGdxGame extends ApplicationAdapter {
         );
 
         // Dogs.
-        for (Dog dog : dogs) {
+        for (Dog dog : stage.getDogs()) {
             Rectangle dogBody = dog.getBounds();
             batch.draw(
                 dogTexture,
@@ -597,7 +472,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
         float groundStart = 0f;
 
-        for (Rectangle hole : holes) {
+        for (Rectangle hole : stage.getHoles()) {
             if (hole.x > groundStart) {
                 shape.rect(
                     groundStart,
@@ -610,18 +485,18 @@ public class MyGdxGame extends ApplicationAdapter {
             groundStart = hole.x + hole.width;
         }
 
-        if (groundStart < levelWidth) {
+        if (groundStart < stage.getWidth()) {
             shape.rect(
                 groundStart,
                 0f,
-                levelWidth - groundStart,
+                stage.getWidth() - groundStart,
                 GROUND_Y
             );
         }
 
         shape.setColor(Color.BLACK);
 
-        for (Rectangle hole : holes) {
+        for (Rectangle hole : stage.getHoles()) {
             shape.rect(
                 hole.x, 0f,
                 hole.width, GROUND_Y
