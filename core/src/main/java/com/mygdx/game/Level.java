@@ -90,8 +90,8 @@ public class Level {
 
             stage.addDog(280, 200, 380, 100);
             stage.addDog(1600, 1500, 1750, 120);
-            stage.addDog(2420, 2345, 2490, 120);
-            stage.addDog(3300, 3200, 3340, 130);
+            stage.addDog(2420, 2345, 2490, 50);
+            stage.addDog(3300, 3200, 3340, 50);
 
             stage.addExit(4020);
         }

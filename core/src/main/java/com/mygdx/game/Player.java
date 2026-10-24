@@ -17,7 +17,7 @@ public class Player {
     private static final float START_X = 100f;
 
     // Long enough to reach the later tall wall.
-    private static final float LIQUID_DURATION = 5f;
+    private static final float LIQUID_DURATION = 3f;
 
     private final Rectangle bounds = new Rectangle();
     private float velocityY = 0f;
